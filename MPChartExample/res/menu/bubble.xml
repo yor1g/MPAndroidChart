@@ -6,12 +6,12 @@
         android:title="Toggle Values">
     </item>
     <item
-        android:id="@+id/actionToggleHighlight"
-        android:title="Toggle Highlight">
+        android:id="@+id/actionToggleIcons"
+        android:title="Toggle Icons">
     </item>
     <item
-        android:id="@+id/actionToggleStartzero"
-        android:title="Toggle StartZero">
+        android:id="@+id/actionToggleHighlight"
+        android:title="Toggle Highlight">
     </item>
     <item
         android:id="@+id/actionToggleAdjustXLegend"
@@ -28,10 +28,6 @@
     <item
         android:id="@+id/animateXY"
         android:title="Animate XY">
-    </item>
-    <item
-        android:id="@+id/actionToggleFilter"
-        android:title="Toggle filter">
     </item>
     <item
         android:id="@+id/actionSave"

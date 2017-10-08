@@ -20,14 +20,16 @@ import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.Legend.LegendPosition;
-import com.github.mikephil.charting.data.DataSet;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.PercentFormatter;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.interfaces.datasets.IDataSet;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
-import com.github.mikephil.charting.highlight.Highlight;
-import com.github.mikephil.charting.formatter.PercentFormatter;
+import com.github.mikephil.charting.utils.MPPointF;
 import com.xxmassdeveloper.mpchartexample.notimportant.DemoBase;
 
 import java.util.ArrayList;
@@ -38,8 +40,6 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
     private PieChart mChart;
     private SeekBar mSeekBarX, mSeekBarY;
     private TextView tvX, tvY;
-    
-    private Typeface tf;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,26 +53,21 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
 
         mSeekBarX = (SeekBar) findViewById(R.id.seekBar1);
         mSeekBarY = (SeekBar) findViewById(R.id.seekBar2);
-
+        mSeekBarX.setProgress(4);
         mSeekBarY.setProgress(10);
-
-        mSeekBarX.setOnSeekBarChangeListener(this);
-        mSeekBarY.setOnSeekBarChangeListener(this);
 
         mChart = (PieChart) findViewById(R.id.chart1);
         mChart.setUsePercentValues(true);
-        mChart.setDescription("");
+        mChart.getDescription().setEnabled(false);
         mChart.setExtraOffsets(5, 10, 5, 5);
 
         mChart.setDragDecelerationFrictionCoef(0.95f);
 
-        tf = Typeface.createFromAsset(getAssets(), "OpenSans-Regular.ttf");
-
-        mChart.setCenterTextTypeface(Typeface.createFromAsset(getAssets(), "OpenSans-Light.ttf"));
+        mChart.setCenterTextTypeface(mTfLight);
         mChart.setCenterText(generateCenterSpannableText());
 
         mChart.setDrawHoleEnabled(true);
-        mChart.setHoleColorTransparent(true);
+        mChart.setHoleColor(Color.WHITE);
 
         mChart.setTransparentCircleColor(Color.WHITE);
         mChart.setTransparentCircleAlpha(110);
@@ -93,16 +88,27 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
         // add a selection listener
         mChart.setOnChartValueSelectedListener(this);
 
-        setData(3, 100);
+        setData(4, 100);
 
         mChart.animateY(1400, Easing.EasingOption.EaseInOutQuad);
         // mChart.spin(2000, 0, 360);
 
+        mSeekBarX.setOnSeekBarChangeListener(this);
+        mSeekBarY.setOnSeekBarChangeListener(this);
+
         Legend l = mChart.getLegend();
-        l.setPosition(LegendPosition.RIGHT_OF_CHART);
+        l.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
+        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
+        l.setOrientation(Legend.LegendOrientation.VERTICAL);
+        l.setDrawInside(false);
         l.setXEntrySpace(7f);
         l.setYEntrySpace(0f);
         l.setYOffset(0f);
+
+        // entry label styling
+        mChart.setEntryLabelColor(Color.WHITE);
+        mChart.setEntryLabelTypeface(mTfRegular);
+        mChart.setEntryLabelTextSize(12f);
     }
 
     @Override
@@ -116,8 +122,15 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
 
         switch (item.getItemId()) {
             case R.id.actionToggleValues: {
-                for (DataSet<?> set : mChart.getData().getDataSets())
+                for (IDataSet<?> set : mChart.getData().getDataSets())
                     set.setDrawValues(!set.isDrawValuesEnabled());
+
+                mChart.invalidate();
+                break;
+            }
+            case R.id.actionToggleIcons: {
+                for (IDataSet<?> set : mChart.getData().getDataSets())
+                    set.setDrawIcons(!set.isDrawIconsEnabled());
 
                 mChart.invalidate();
                 break;
@@ -140,7 +153,7 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
             }
             case R.id.actionToggleXVals: {
 
-                mChart.setDrawSliceText(!mChart.isDrawSliceTextEnabled());
+                mChart.setDrawEntryLabels(!mChart.isDrawEntryLabelsEnabled());
                 mChart.invalidate();
                 break;
             }
@@ -165,6 +178,11 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
                 mChart.animateXY(1400, 1400);
                 break;
             }
+            case R.id.actionToggleSpin: {
+                mChart.spin(1000, mChart.getRotationAngle(), mChart.getRotationAngle() + 360, Easing.EasingOption
+                        .EaseInCubic);
+                break;
+            }
         }
         return true;
     }
@@ -172,7 +190,7 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
-        tvX.setText("" + (mSeekBarX.getProgress() + 1));
+        tvX.setText("" + (mSeekBarX.getProgress()));
         tvY.setText("" + (mSeekBarY.getProgress()));
 
         setData(mSeekBarX.getProgress(), mSeekBarY.getProgress());
@@ -182,22 +200,22 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
 
         float mult = range;
 
-        ArrayList<Entry> yVals1 = new ArrayList<Entry>();
+        ArrayList<PieEntry> entries = new ArrayList<PieEntry>();
 
-        // IMPORTANT: In a PieChart, no values (Entry) should have the same
-        // xIndex (even if from different DataSets), since no values can be
-        // drawn above each other.
-        for (int i = 0; i < count + 1; i++) {
-            yVals1.add(new Entry((float) (Math.random() * mult) + mult / 5, i));
+        // NOTE: The order of the entries when being added to the entries array determines their position around the center of
+        // the chart.
+        for (int i = 0; i < count ; i++) {
+            entries.add(new PieEntry((float) ((Math.random() * mult) + mult / 5),
+                    mParties[i % mParties.length],
+                    getResources().getDrawable(R.drawable.star)));
         }
 
-        ArrayList<String> xVals = new ArrayList<String>();
+        PieDataSet dataSet = new PieDataSet(entries, "Election Results");
 
-        for (int i = 0; i < count + 1; i++)
-            xVals.add(mParties[i % mParties.length]);
+        dataSet.setDrawIcons(false);
 
-        PieDataSet dataSet = new PieDataSet(yVals1, "Election Results");
-        dataSet.setSliceSpace(2f);
+        dataSet.setSliceSpace(3f);
+        dataSet.setIconsOffset(new MPPointF(0, 40));
         dataSet.setSelectionShift(5f);
 
         // add a lot of colors
@@ -224,11 +242,11 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
         dataSet.setColors(colors);
         //dataSet.setSelectionShift(0f);
 
-        PieData data = new PieData(xVals, dataSet);
+        PieData data = new PieData(dataSet);
         data.setValueFormatter(new PercentFormatter());
         data.setValueTextSize(11f);
         data.setValueTextColor(Color.WHITE);
-        data.setValueTypeface(tf);
+        data.setValueTypeface(mTfLight);
         mChart.setData(data);
 
         // undo all highlights
@@ -239,7 +257,7 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
 
     private SpannableString generateCenterSpannableText() {
 
-        SpannableString s = new SpannableString("MPAndroidChart developed by Philipp Jahoda");
+        SpannableString s = new SpannableString("MPAndroidChart\ndeveloped by Philipp Jahoda");
         s.setSpan(new RelativeSizeSpan(1.7f), 0, 14, 0);
         s.setSpan(new StyleSpan(Typeface.NORMAL), 14, s.length() - 15, 0);
         s.setSpan(new ForegroundColorSpan(Color.GRAY), 14, s.length() - 15, 0);
@@ -250,13 +268,13 @@ public class PieChartActivity extends DemoBase implements OnSeekBarChangeListene
     }
 
     @Override
-    public void onValueSelected(Entry e, int dataSetIndex, Highlight h) {
+    public void onValueSelected(Entry e, Highlight h) {
 
         if (e == null)
             return;
         Log.i("VAL SELECTED",
-                "Value: " + e.getVal() + ", xIndex: " + e.getXIndex()
-                        + ", DataSet index: " + dataSetIndex);
+                "Value: " + e.getY() + ", index: " + h.getX()
+                        + ", DataSet index: " + h.getDataSetIndex());
     }
 
     @Override

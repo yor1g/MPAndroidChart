@@ -6,6 +6,10 @@
         android:title="Toggle Y-Values">
     </item>
     <item
+        android:id="@+id/actionToggleIcons"
+        android:title="Toggle Icons">
+    </item>
+    <item
         android:id="@+id/actionToggleXVals"
         android:title="Toggle X-Values">
     </item>
@@ -36,6 +40,10 @@
     <item
         android:id="@+id/actionSave"
         android:title="Save to Gallery">
+    </item>
+    <item
+        android:id="@+id/actionToggleSpin"
+        android:title="Spin Animation">
     </item>
 
 </menu>

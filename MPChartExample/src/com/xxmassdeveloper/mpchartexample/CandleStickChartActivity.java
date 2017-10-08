@@ -20,6 +20,8 @@ import com.github.mikephil.charting.components.YAxis.AxisDependency;
 import com.github.mikephil.charting.data.CandleData;
 import com.github.mikephil.charting.data.CandleDataSet;
 import com.github.mikephil.charting.data.CandleEntry;
+import com.github.mikephil.charting.interfaces.datasets.ICandleDataSet;
+import com.github.mikephil.charting.interfaces.datasets.IDataSet;
 import com.xxmassdeveloper.mpchartexample.notimportant.DemoBase;
 
 import java.util.ArrayList;
@@ -47,8 +49,9 @@ public class CandleStickChartActivity extends DemoBase implements OnSeekBarChang
         mSeekBarY.setOnSeekBarChangeListener(this);
 
         mChart = (CandleStickChart) findViewById(R.id.chart1);
+        mChart.setBackgroundColor(Color.WHITE);
 
-        mChart.setDescription("");
+        mChart.getDescription().setEnabled(false);
 
         // if more than 60 entries are displayed in the chart, no values will be
         // drawn
@@ -61,7 +64,6 @@ public class CandleStickChartActivity extends DemoBase implements OnSeekBarChang
 
         XAxis xAxis = mChart.getXAxis();
         xAxis.setPosition(XAxisPosition.BOTTOM);
-        xAxis.setSpaceBetweenLabels(2);
         xAxis.setDrawGridLines(false);
 
         YAxis leftAxis = mChart.getAxisLeft();  
@@ -69,7 +71,6 @@ public class CandleStickChartActivity extends DemoBase implements OnSeekBarChang
         leftAxis.setLabelCount(7, false);
         leftAxis.setDrawGridLines(false);
         leftAxis.setDrawAxisLine(false);
-        leftAxis.setStartAtZero(false);
         
         YAxis rightAxis = mChart.getAxisRight();
         rightAxis.setEnabled(false);
@@ -80,14 +81,6 @@ public class CandleStickChartActivity extends DemoBase implements OnSeekBarChang
         mSeekBarY.setProgress(100);
         
         mChart.getLegend().setEnabled(false);
-
-        // Legend l = mChart.getLegend();
-        // l.setPosition(LegendPosition.BELOW_CHART_CENTER);
-        // l.setFormSize(8f);
-        // l.setFormToTextSpace(4f);
-        // l.setXEntrySpace(6f);
-
-        // mChart.setDrawLegend(false);
     }
 
     @Override
@@ -100,6 +93,20 @@ public class CandleStickChartActivity extends DemoBase implements OnSeekBarChang
     public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
+            case R.id.actionToggleValues: {
+                for (IDataSet set : mChart.getData().getDataSets())
+                    set.setDrawValues(!set.isDrawValuesEnabled());
+
+                mChart.invalidate();
+                break;
+            }
+            case R.id.actionToggleIcons: {
+                for (IDataSet set : mChart.getData().getDataSets())
+                    set.setDrawIcons(!set.isDrawIconsEnabled());
+
+                mChart.invalidate();
+                break;
+            }
             case R.id.actionToggleHighlight: {
                 if(mChart.getData() != null) {
                     mChart.getData().setHighlightEnabled(!mChart.getData().isHighlightEnabled());
@@ -122,17 +129,10 @@ public class CandleStickChartActivity extends DemoBase implements OnSeekBarChang
                 break;
             }
             case R.id.actionToggleMakeShadowSameColorAsCandle: {
-                for (CandleDataSet set : mChart.getData().getDataSets())
-                {
-                    set.setShadowColorSameAsCandle(!set.getShadowColorSameAsCandle());
+                for (ICandleDataSet set : mChart.getData().getDataSets()) {
+                   //TODO: set.setShadowColorSameAsCandle(!set.getShadowColorSameAsCandle());
                 }
 
-                mChart.invalidate();
-                break;
-            }
-            case R.id.actionToggleStartzero: {
-                mChart.getAxisLeft().setStartAtZero(!mChart.getAxisLeft().isStartAtZeroEnabled());
-                mChart.getAxisRight().setStartAtZero(!mChart.getAxisRight().isStartAtZeroEnabled());
                 mChart.invalidate();
                 break;
             }
@@ -186,27 +186,30 @@ public class CandleStickChartActivity extends DemoBase implements OnSeekBarChang
 
             boolean even = i % 2 == 0;
 
-            yVals1.add(new CandleEntry(i, val + high, val - low, even ? val + open : val - open,
-                    even ? val - close : val + close));
-        }
-
-        ArrayList<String> xVals = new ArrayList<String>();
-        for (int i = 0; i < prog; i++) {
-            xVals.add("" + (1990 + i));
+            yVals1.add(new CandleEntry(
+                    i, val + high,
+                    val - low,
+                    even ? val + open : val - open,
+                    even ? val - close : val + close,
+                    getResources().getDrawable(R.drawable.star)
+            ));
         }
 
         CandleDataSet set1 = new CandleDataSet(yVals1, "Data Set");
+
+        set1.setDrawIcons(false);
         set1.setAxisDependency(AxisDependency.LEFT);
 //        set1.setColor(Color.rgb(80, 80, 80));
         set1.setShadowColor(Color.DKGRAY);
         set1.setShadowWidth(0.7f);
         set1.setDecreasingColor(Color.RED);
-        set1.setDecreasingPaintStyle(Paint.Style.STROKE);
+        set1.setDecreasingPaintStyle(Paint.Style.FILL);
         set1.setIncreasingColor(Color.rgb(122, 242, 84));
-        set1.setIncreasingPaintStyle(Paint.Style.FILL);
+        set1.setIncreasingPaintStyle(Paint.Style.STROKE);
+        set1.setNeutralColor(Color.BLUE);
         //set1.setHighlightLineWidth(1f);
 
-        CandleData data = new CandleData(xVals, set1);
+        CandleData data = new CandleData(set1);
         
         mChart.setData(data);
         mChart.invalidate();
